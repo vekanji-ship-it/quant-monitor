@@ -1,6 +1,7 @@
 // 抓取總經數據
 async function updateMacroData() {
     try {
+        // 💡 修正：改用相對路徑，讓 Vercel 知道去哪裡找 API
         const response = await fetch('/api/macro');
         const data = await response.json();
 
@@ -34,9 +35,10 @@ function updateChange(selector, value, isCurrency = false) {
     }
 }
 
-// 💡 新增：抓取選股清單並更新表格
+// 抓取選股清單並更新表格
 async function updateStockList() {
     try {
+        // 💡 修正：改用相對路徑
         const response = await fetch('/api/stocks');
         const stocks = await response.json();
         
