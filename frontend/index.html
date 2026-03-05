@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>量化監控中心</title>
+    <style>
+        /* 蘋果風格全域設定 */
+        :root {
+            --bg-color: #000000;
+            --card-bg: rgba(28, 28, 30, 0.7);
+            --text-primary: #F5F5F7;
+            --text-secondary: #86868B;
+            --up-color: #34C759;
+            --down-color: #FF3B30;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column; /* 💡 讓卡片和表格上下排列 */
+            align-items: center;
+            padding-top: 60px; /* 💡 取消原本的完全置中，改為靠上留白 */
+            min-height: 100vh;
+            margin: 0;
+            box-sizing: border-box;
+        }
+
+        /* 儀表板容器 */
+        .dashboard {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px; /* 💡 和下方表格保持距離 */
+        }
+
+        /* 毛玻璃卡片設計 */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px;
+            width: 220px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+        }
+
+        .card-title {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            letter-spacing: -1px;
+        }
+
+        .card-change {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .up { color: var(--up-color); }
+        .down { color: var(--down-color); }
+
+        /* 💡 新增：蘋果風格表格設計 */
+        .table-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 708px; /* 對齊上面三張卡片的總寬度 */
+        }
+
+        .section-title {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        td {
+            padding: 12px 0;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        tr:last-child td { border-bottom: none; }
+        .highlight-buy { color: var(--up-color); font-weight: 600;}
+    </style>
+</head>
+<body>
+
+    <div class="dashboard">
+        <div class="card">
+            <div class="card-title">Nasdaq 綜合指數</div>
+            <div id="nasdaq-val" class="card-value">Loading...</div>
+            <div id="nasdaq-change" class="card-change">--%</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">費城半導體 SOX</div>
+            <div id="sox-val" class="card-value">Loading...</div>
+            <div id="sox-change" class="card-change">--%</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">USD / TWD 匯率</div>
+            <div id="twd-val" class="card-value">Loading...</div>
+            <div id="twd-change" class="card-change">--%</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="section-title">本日中型股動能清單 (市值百億、法人買超)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>代號</th>
+                    <th>名稱</th>
+                    <th>三大法人買超 (張)</th>
+                    <th>市值 (億)</th>
+                </tr>
+            </thead>
+            <tbody id="stock-list-body">
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--text-secondary);">系統正在進行雲端運算與籌碼分析，約需 15 秒...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
