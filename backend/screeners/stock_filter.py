@@ -89,4 +89,5 @@ def get_midcap_institutional_buys():
 if __name__ == "__main__":
     final_list = get_midcap_institutional_buys()
     if not final_list.empty:
-        print(final_list.to_string(index=False))
+        print(final_list.to_string(index=False)) 
+        #// 強制觸發 Vercel 更新 2026

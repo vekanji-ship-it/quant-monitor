@@ -67,6 +67,6 @@ async function updateStockList() {
     }
 }
 
-// 網頁載入時同時執行這兩個功能
+// 網頁載入時同時執行這兩個功能 // 強制觸發 Vercel 更新 2026
 updateMacroData();
 updateStockList();
