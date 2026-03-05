@@ -1,11 +1,20 @@
+import os
+import sys
+
+# 💡 關鍵修正：解決 Vercel 雲端路徑找不到模組的問題
+# 取得目前 main.py 所在的目錄並加入系統路徑
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+# 現在 Python 就能順利找到這兩個資料夾了
 from data_fetchers.macro_env import get_macro_environment
-from screeners.stock_filter import get_midcap_institutional_buys # 💡 新增：匯入選股模組
+from screeners.stock_filter import get_midcap_institutional_buys
 
 app = FastAPI()
 
-# 允許跨網域請求 (讓你的 HTML 檔案能讀取 API)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,7 +27,6 @@ async def read_macro():
     data = get_macro_environment()
     return data
 
-# 💡 新增：提供選股清單的 API 路由
 @app.get("/api/stocks")
 async def read_stocks():
     df = get_midcap_institutional_buys()
@@ -26,5 +34,4 @@ async def read_stocks():
 
 if __name__ == "__main__":
     import uvicorn
-    # 啟動伺服器，監聽 8000 埠口
     uvicorn.run(app, host="127.0.0.1", port=8000)
