@@ -1,15 +1,14 @@
 import os
 import sys
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# 💡 關鍵修正：解決 Vercel 雲端路徑找不到模組的問題
-# 取得目前 main.py 所在的目錄並加入系統路徑
+# 💡 絕對路徑修正：告訴 Vercel 去 backend 資料夾裡找東西
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-# 現在 Python 就能順利找到這兩個資料夾了
+# 現在 Python 就能順利看到 data_fetchers 和 screeners 了
 from data_fetchers.macro_env import get_macro_environment
 from screeners.stock_filter import get_midcap_institutional_buys
 
@@ -24,14 +23,9 @@ app.add_middleware(
 
 @app.get("/api/macro")
 async def read_macro():
-    data = get_macro_environment()
-    return data
+    return get_macro_environment()
 
 @app.get("/api/stocks")
 async def read_stocks():
     df = get_midcap_institutional_buys()
     return df.to_dict(orient="records")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
