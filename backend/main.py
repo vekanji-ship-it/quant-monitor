@@ -19,9 +19,10 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 async def read_macro():
     return get_macro_environment()
 
+# 💡 修改：新增接收參數的能力，並傳遞給選股引擎
 @app.get("/api/stocks")
-async def read_stocks():
-    df = get_midcap_institutional_buys()
+async def read_stocks(min_cap: int = 50, exclude_etf: bool = True, above_5ma: bool = False):
+    df = get_midcap_institutional_buys(min_cap, exclude_etf, above_5ma)
     return df.to_dict(orient="records")
 
 @app.get("/api/ai-report")
@@ -37,7 +38,6 @@ async def get_ai_report(stocks: str = Query(default="")):
         return {"report": response.json()["candidates"][0]["content"]["parts"][0]["text"]}
     except: return {"report": f"AI 運算中。焦點標的：{stocks}"}
 
-# 💡 修改 B：新增輕量級每日財經頭條 API
 @app.get("/api/news")
 async def read_news():
     try:

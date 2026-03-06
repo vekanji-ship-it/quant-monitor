@@ -6,17 +6,13 @@ async function updateMacroData() {
         const response = await fetch('/api/macro');
         const data = await response.json();
 
-        // 更新三大指標
         document.querySelector('#nasdaq-val').innerText = data.Nasdaq.price.toLocaleString();
         updateChange('#nasdaq-change', data.Nasdaq.change_pct);
-
         document.querySelector('#sox-val').innerText = data.SOX.price.toLocaleString();
         updateChange('#sox-change', data.SOX.change_pct);
-
         document.querySelector('#twd-val').innerText = data.USD_TWD.price;
         updateChange('#twd-change', data.USD_TWD.change_pct, true); 
 
-        // 更新台股大盤與繪製圖表
         if (data.TWII) {
             document.querySelector('#twii-val').innerText = data.TWII.price.toLocaleString();
             updateChange('#twii-change', data.TWII.change_pct);
@@ -30,7 +26,6 @@ async function updateMacroData() {
     }
 }
 
-// 顏色與漲跌幅判斷輔助函數
 function updateChange(selector, value, isCurrency = false) {
     const el = document.querySelector(selector);
     if(!el) return;
@@ -53,7 +48,7 @@ function drawTWIIChart(historyData, changePct) {
     }
     
     const isUp = changePct >= 0;
-    const mainColor = isUp ? 'rgba(52, 199, 89, 1)' : 'rgba(255, 59, 48, 1)'; // 蘋果綠 / 蘋果紅
+    const mainColor = isUp ? 'rgba(52, 199, 89, 1)' : 'rgba(255, 59, 48, 1)'; 
     const gradientTop = isUp ? 'rgba(52, 199, 89, 0.4)' : 'rgba(255, 59, 48, 0.4)';
     const gradientBottom = isUp ? 'rgba(52, 199, 89, 0)' : 'rgba(255, 59, 48, 0)';
 
@@ -61,7 +56,6 @@ function drawTWIIChart(historyData, changePct) {
     gradient.addColorStop(0, gradientTop);
     gradient.addColorStop(1, gradientBottom);
 
-    // 製作簡單的 X 軸標籤 (純粹為了圖表格式需求，畫面上會隱藏)
     const labels = historyData.map((_, index) => index);
 
     twiiChartInstance = new Chart(ctx, {
@@ -76,7 +70,7 @@ function drawTWIIChart(historyData, changePct) {
                 pointHoverRadius: 4,
                 fill: true,
                 backgroundColor: gradient,
-                tension: 0.3 // 線條平滑度
+                tension: 0.3 
             }]
         },
         options: {
@@ -89,7 +83,7 @@ function drawTWIIChart(historyData, changePct) {
                     intersect: false,
                     displayColors: false,
                     callbacks: {
-                        title: () => null, // 隱藏 Tooltip 標題
+                        title: () => null, 
                         label: function(context) {
                             return context.parsed.y.toLocaleString();
                         }
@@ -100,7 +94,6 @@ function drawTWIIChart(historyData, changePct) {
                 x: { display: false },
                 y: { 
                     display: false, 
-                    // 讓圖表上下留有一點呼吸空間
                     min: Math.min(...historyData) * 0.995, 
                     max: Math.max(...historyData) * 1.005 
                 }
@@ -114,17 +107,30 @@ function drawTWIIChart(historyData, changePct) {
     });
 }
 
-// 抓取選股清單
+// 💡 修改：抓取選股清單 (動態讀取參數並更新 URL)
 async function updateStockList() {
     try {
-        const response = await fetch('/api/stocks');
+        // 取得介面上的設定值
+        const excludeEtf = document.getElementById('filter-etf').checked;
+        const above5ma = document.getElementById('filter-5ma').checked;
+        const minCap = document.getElementById('filter-cap').value;
+
+        const tbody = document.querySelector('#stock-list-body');
+        const aiReport = document.querySelector('#ai-report-content');
+        
+        // 切換為載入狀態
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">重新掃描市場籌碼中，請稍候...</td></tr>';
+        aiReport.innerText = "等待名單出爐後進行 AI 解析...";
+
+        // 將參數組裝進網址
+        const url = `/api/stocks?min_cap=${minCap}&exclude_etf=${excludeEtf}&above_5ma=${above5ma}`;
+        const response = await fetch(url);
         const stocks = await response.json();
         
-        const tbody = document.querySelector('#stock-list-body');
         tbody.innerHTML = ''; 
         
         if (stocks.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">今日無符合條件之標的</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">當前條件下無符合之標的，請嘗試放寬參數。</td></tr>';
             fetchAIReport(""); 
             return;
         }
@@ -192,3 +198,8 @@ async function updateNews() {
 updateMacroData();
 updateStockList();
 updateNews();
+
+// 💡 新增：綁定「套用並掃描」按鈕事件
+document.getElementById('btn-search').addEventListener('click', () => {
+    updateStockList();
+});
