@@ -29,3 +29,15 @@ async def read_macro():
 async def read_stocks():
     df = get_midcap_institutional_buys()
     return df.to_dict(orient="records")
+
+# 💡 新增：用來「照胃鏡」的 Debug API，看透 Vercel 到底打包了什麼檔案
+@app.get("/api/debug")
+async def debug_info():
+    parent_dir = os.path.dirname(current_dir)
+    return {
+        "1_當前路徑 (current_dir)": current_dir,
+        "2_當前路徑下的檔案": os.listdir(current_dir),
+        "3_上一層路徑 (parent_dir)": parent_dir,
+        "4_上一層路徑下的檔案": os.listdir(parent_dir) if os.path.exists(parent_dir) else [],
+        "5_Python_系統路徑 (sys.path)": sys.path
+    }
