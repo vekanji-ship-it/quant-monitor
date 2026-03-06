@@ -23,16 +23,20 @@
             flex-direction: column; 
             align-items: center;
             padding-top: 60px; 
+            padding-bottom: 60px;
             min-height: 100vh;
             margin: 0;
             box-sizing: border-box;
         }
 
-        /* 儀表板容器 */
+        /* 儀表板容器 (💡 修改：加入 flex-wrap 讓 4 張卡片能漂亮排版) */
         .dashboard {
             display: flex;
+            flex-wrap: wrap; 
+            justify-content: center;
             gap: 24px;
             margin-bottom: 24px; 
+            max-width: 960px;
         }
 
         /* 毛玻璃卡片設計 */
@@ -42,7 +46,7 @@
             -webkit-backdrop-filter: blur(20px);
             border-radius: 24px;
             padding: 24px;
-            width: 220px;
+            width: 200px; /* 💡 稍微縮小寬度，讓一行能塞下更多卡片 */
             box-shadow: 0 4px 24px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
             transition: transform 0.2s ease;
@@ -79,7 +83,7 @@
         .up { color: var(--up-color); }
         .down { color: var(--down-color); }
 
-        /* 表格與 AI 區塊共用設計 */
+        /* 表格與區塊共用設計 */
         .table-container {
             background: var(--card-bg);
             backdrop-filter: blur(20px);
@@ -89,7 +93,9 @@
             box-shadow: 0 4px 24px rgba(0,0,0,0.5);
             border: 1px solid rgba(255,255,255,0.1);
             width: 100%;
-            max-width: 708px; 
+            max-width: 870px; /* 💡 對齊卡片總寬度 */
+            margin-bottom: 24px;
+            box-sizing: border-box;
         }
 
         .section-title {
@@ -122,11 +128,28 @@
 
         tr:last-child td { border-bottom: none; }
         .highlight-buy { color: var(--up-color); font-weight: 600;}
+
+        /* 💡 新增：新聞連結樣式 */
+        .news-link {
+            color: #64D2FF;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .news-link:hover {
+            color: #0A84FF;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
     <div class="dashboard">
+        <div class="card">
+            <div class="card-title">台灣加權指數</div>
+            <div id="twii-val" class="card-value">Loading...</div>
+            <div id="twii-change" class="card-change">--%</div>
+        </div>
+
         <div class="card">
             <div class="card-title">Nasdaq 綜合指數</div>
             <div id="nasdaq-val" class="card-value">Loading...</div>
@@ -146,7 +169,7 @@
         </div>
     </div>
 
-    <div class="table-container" style="margin-top: 0; margin-bottom: 24px;">
+    <div class="table-container" style="margin-top: 0;">
         <div class="section-title" style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 24px;">✨</span> AI 盤前動能解析
         </div>
@@ -156,7 +179,14 @@
     </div>
 
     <div class="table-container">
-        <div class="section-title">本日中型股動能清單 (市值百億、法人買超)</div>
+        <div class="section-title">📰 每日財經頭條</div>
+        <ul id="news-list" style="padding-left: 20px; line-height: 1.8; margin: 0; font-size: 16px;">
+            <li style="color: var(--text-secondary);">新聞載入中...</li>
+        </ul>
+    </div>
+
+    <div class="table-container">
+        <div class="section-title">本日中型股動能清單 (市值50億+、法人買超)</div>
         <table>
             <thead>
                 <tr>

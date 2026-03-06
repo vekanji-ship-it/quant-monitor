@@ -1,8 +1,14 @@
-// 抓取總經數據
+// 抓取總經數據 (包含新加入的台股大盤)
 async function updateMacroData() {
     try {
         const response = await fetch('/api/macro');
         const data = await response.json();
+
+        // 💡 新增：更新台灣加權指數
+        if (data.TWII) {
+            document.querySelector('#twii-val').innerText = data.TWII.price.toLocaleString();
+            updateChange('#twii-change', data.TWII.change_pct);
+        }
 
         // 更新 Nasdaq
         document.querySelector('#nasdaq-val').innerText = data.Nasdaq.price.toLocaleString();
@@ -21,6 +27,7 @@ async function updateMacroData() {
     }
 }
 
+// 顏色與漲跌幅判斷輔助函數
 function updateChange(selector, value, isCurrency = false) {
     const el = document.querySelector(selector);
     const prefix = value > 0 ? "▲" : "▼";
@@ -61,7 +68,7 @@ async function updateStockList() {
             tbody.appendChild(tr);
         });
 
-        // 💡 提取股票名稱，送給 AI 產生分析報告
+        // 提取股票名稱，送給 AI 產生分析報告
         const stockNames = stocks.map(s => s['名稱']).join('、');
         fetchAIReport(stockNames);
 
@@ -72,7 +79,7 @@ async function updateStockList() {
     }
 }
 
-// 💡 獨立出來的 AI 呼叫函數
+// 獨立出來的 AI 呼叫函數
 async function fetchAIReport(stockNames) {
     try {
         const aiResponse = await fetch(`/api/ai-report?stocks=${encodeURIComponent(stockNames)}`);
@@ -84,6 +91,33 @@ async function fetchAIReport(stockNames) {
     }
 }
 
-// 網頁載入時同時執行
+// 💡 新增：抓取每日財經新聞函數
+async function updateNews() {
+    try {
+        const response = await fetch('/api/news');
+        const newsList = await response.json();
+        
+        const ul = document.querySelector('#news-list');
+        ul.innerHTML = ''; // 清空 Loading 訊息
+        
+        if (newsList.length === 0) {
+            ul.innerHTML = '<li style="color: var(--text-secondary);">目前無最新新聞</li>';
+            return;
+        }
+
+        newsList.forEach(news => {
+            const li = document.createElement('li');
+            li.innerHTML = `<a href="${news.link}" target="_blank" class="news-link">${news.title}</a>`;
+            ul.appendChild(li);
+        });
+
+    } catch (error) {
+        console.error("無法取得新聞:", error);
+        document.querySelector('#news-list').innerHTML = '<li style="color: var(--down-color);">新聞載入失敗，請稍後再試</li>';
+    }
+}
+
+// 網頁載入時同時執行所有功能
 updateMacroData();
 updateStockList();
+updateNews(); // 啟動新聞抓取
