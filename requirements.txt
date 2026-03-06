@@ -3,4 +3,3 @@ pandas
 fastapi
 uvicorn
 requests
-google-generativeai
