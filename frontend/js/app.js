@@ -1,7 +1,6 @@
 // 抓取總經數據
 async function updateMacroData() {
     try {
-        // 💡 修正：改用相對路徑，讓 Vercel 知道去哪裡找 API
         const response = await fetch('/api/macro');
         const data = await response.json();
 
@@ -15,7 +14,7 @@ async function updateMacroData() {
 
         // 更新 匯率
         document.querySelector('#twd-val').innerText = data.USD_TWD.price;
-        updateChange('#twd-change', data.USD_TWD.change_pct, true); // true 代表匯率邏輯（跌是升值）
+        updateChange('#twd-change', data.USD_TWD.change_pct, true); 
 
     } catch (error) {
         console.error("無法取得總經數據:", error);
@@ -35,10 +34,9 @@ function updateChange(selector, value, isCurrency = false) {
     }
 }
 
-// 抓取選股清單並更新表格
+// 抓取選股清單並更新表格，接著呼叫 AI 寫早報
 async function updateStockList() {
     try {
-        // 💡 修正：改用相對路徑
         const response = await fetch('/api/stocks');
         const stocks = await response.json();
         
@@ -47,6 +45,8 @@ async function updateStockList() {
         
         if (stocks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">今日無符合條件之標的</td></tr>';
+            // 如果沒股票，也要呼叫 AI 寫一段安慰早報
+            fetchAIReport(""); 
             return;
         }
 
@@ -61,12 +61,29 @@ async function updateStockList() {
             tbody.appendChild(tr);
         });
 
+        // 💡 提取股票名稱，送給 AI 產生分析報告
+        const stockNames = stocks.map(s => s['名稱']).join('、');
+        fetchAIReport(stockNames);
+
     } catch (error) {
         console.error("無法取得選股名單:", error);
         document.querySelector('#stock-list-body').innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--down-color);">資料載入失敗，請確認後端伺服器狀態</td></tr>';
+        document.querySelector('#ai-report-content').innerText = "連線中斷，無法產生分析報告。";
     }
 }
 
-// 網頁載入時同時執行這兩個功能 // 強制觸發 Vercel 更新 2026
+// 💡 獨立出來的 AI 呼叫函數
+async function fetchAIReport(stockNames) {
+    try {
+        const aiResponse = await fetch(`/api/ai-report?stocks=${encodeURIComponent(stockNames)}`);
+        const aiData = await aiResponse.json();
+        document.querySelector('#ai-report-content').innerText = aiData.report;
+    } catch (error) {
+        console.error("AI 報告產生失敗:", error);
+        document.querySelector('#ai-report-content').innerText = "AI 模組連線失敗，請檢查設定。";
+    }
+}
+
+// 網頁載入時同時執行
 updateMacroData();
 updateStockList();
