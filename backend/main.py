@@ -2,6 +2,7 @@ import os
 import sys
 import requests
 import xml.etree.ElementTree as ET
+import yfinance as yf
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -19,7 +20,6 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 async def read_macro():
     return get_macro_environment()
 
-# 💡 修改：新增接收參數的能力，並傳遞給選股引擎
 @app.get("/api/stocks")
 async def read_stocks(min_cap: int = 50, exclude_etf: bool = True, above_5ma: bool = False):
     df = get_midcap_institutional_buys(min_cap, exclude_etf, above_5ma)
@@ -27,7 +27,7 @@ async def read_stocks(min_cap: int = 50, exclude_etf: bool = True, above_5ma: bo
 
 @app.get("/api/ai-report")
 async def get_ai_report(stocks: str = Query(default="")):
-    if not stocks: return {"report": "今日籌碼混沌，無符合強勢買超條件之中型股，建議保留現金觀望。"}
+    if not stocks: return {"report": "今日籌碼混沌，無符合條件之強勢股，建議保留現金觀望。"}
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key: return {"report": f"今日焦點標的：{stocks} (等待 AI 鑰匙啟用)"}
     
@@ -47,3 +47,29 @@ async def read_news():
         news_list = [{"title": item.find('title').text, "link": item.find('link').text} for item in root.findall('.//item')[:5]]
         return news_list
     except: return []
+
+# 💡 新增：單一個股深度診斷 API (基本面與專屬新聞)
+@app.get("/api/stock/{symbol}")
+async def get_stock_detail(symbol: str, name: str = Query(default="")):
+    try:
+        stock = yf.Ticker(f"{symbol}.TW")
+        info = stock.info
+        
+        # 整理基本面
+        fundamentals = {
+            "pe_ratio": round(info.get("trailingPE", 0), 2) if info.get("trailingPE") else "-",
+            "pb_ratio": round(info.get("priceToBook", 0), 2) if info.get("priceToBook") else "-",
+            "dividend_yield": f"{round(info.get('dividendYield', 0) * 100, 2)}%" if info.get('dividendYield') else "-",
+            "52w_high": info.get("fiftyTwoWeekHigh", "-"),
+            "52w_low": info.get("fiftyTwoWeekLow", "-")
+        }
+        
+        # 抓取個股新聞
+        news_url = f"https://news.google.com/rss/search?q={symbol}+{name}+股市&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+        res = requests.get(news_url, timeout=5)
+        root = ET.fromstring(res.content)
+        news_list = [{"title": item.find('title').text, "link": item.find('link').text} for item in root.findall('.//item')[:4]]
+        
+        return {"fundamentals": fundamentals, "news": news_list}
+    except Exception as e:
+        return {"error": str(e)}

@@ -39,7 +39,6 @@ function updateChange(selector, value, isCurrency = false) {
     }
 }
 
-// 繪製台股大盤趨勢圖
 function drawTWIIChart(historyData, changePct) {
     const ctx = document.getElementById('twiiChart').getContext('2d');
     
@@ -107,10 +106,9 @@ function drawTWIIChart(historyData, changePct) {
     });
 }
 
-// 💡 修改：抓取選股清單 (動態讀取參數並更新 URL)
+// 抓取選股清單並綁定點擊事件
 async function updateStockList() {
     try {
-        // 取得介面上的設定值
         const excludeEtf = document.getElementById('filter-etf').checked;
         const above5ma = document.getElementById('filter-5ma').checked;
         const minCap = document.getElementById('filter-cap').value;
@@ -118,11 +116,9 @@ async function updateStockList() {
         const tbody = document.querySelector('#stock-list-body');
         const aiReport = document.querySelector('#ai-report-content');
         
-        // 切換為載入狀態
         tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">重新掃描市場籌碼中，請稍候...</td></tr>';
         aiReport.innerText = "等待名單出爐後進行 AI 解析...";
 
-        // 將參數組裝進網址
         const url = `/api/stocks?min_cap=${minCap}&exclude_etf=${excludeEtf}&above_5ma=${above5ma}`;
         const response = await fetch(url);
         const stocks = await response.json();
@@ -137,6 +133,10 @@ async function updateStockList() {
 
         stocks.forEach(stock => {
             const tr = document.createElement('tr');
+            // 💡 賦予可點擊的 Class，並綁定開啟 Modal 的函數
+            tr.className = 'clickable-row';
+            tr.onclick = () => openStockModal(stock['代號'], stock['名稱'], stock['三大法人買超(張)']);
+            
             tr.innerHTML = `
                 <td style="color: var(--text-secondary);">${stock['代號']}</td>
                 <td>${stock['名稱']}</td>
@@ -156,7 +156,6 @@ async function updateStockList() {
     }
 }
 
-// 呼叫 AI 寫早報
 async function fetchAIReport(stockNames) {
     try {
         const aiResponse = await fetch(`/api/ai-report?stocks=${encodeURIComponent(stockNames)}`);
@@ -168,7 +167,6 @@ async function fetchAIReport(stockNames) {
     }
 }
 
-// 抓取每日財經新聞
 async function updateNews() {
     try {
         const response = await fetch('/api/news');
@@ -194,12 +192,59 @@ async function updateNews() {
     }
 }
 
-// 網頁載入時同時執行所有功能
-updateMacroData();
-updateStockList();
-updateNews();
+// 💡 新增：打開與關閉彈出視窗的邏輯
+async function openStockModal(symbol, name, netBuy) {
+    const modal = document.getElementById('stock-modal');
+    modal.style.display = 'flex';
+    document.getElementById('modal-title').innerText = `${symbol} ${name}`;
+    
+    // 預設載入文字
+    document.getElementById('modal-fundamentals').innerHTML = '<div style="color:var(--text-secondary)">連線至證交所與資料庫...</div>';
+    document.getElementById('modal-news').innerHTML = '<li style="color:var(--text-secondary)">搜尋最新新聞中...</li>';
 
-// 💡 新增：綁定「套用並掃描」按鈕事件
+    try {
+        const response = await fetch(`/api/stock/${symbol}?name=${encodeURIComponent(name)}`);
+        const data = await response.json();
+        
+        // 填入籌碼與基本面
+        const fund = data.fundamentals;
+        document.getElementById('modal-fundamentals').innerHTML = `
+            <div class="info-box"><div class="info-label">本日法人買超</div><div class="info-value highlight-buy">+${netBuy.toLocaleString()} 張</div></div>
+            <div class="info-box"><div class="info-label">本益比 (P/E)</div><div class="info-value">${fund.pe_ratio}</div></div>
+            <div class="info-box"><div class="info-label">股價淨值比 (P/B)</div><div class="info-value">${fund.pb_ratio}</div></div>
+            <div class="info-box"><div class="info-label">最新殖利率</div><div class="info-value">${fund.dividend_yield}</div></div>
+            <div class="info-box"><div class="info-label">52週最高價</div><div class="info-value">${fund['52w_high']}</div></div>
+            <div class="info-box"><div class="info-label">52週最低價</div><div class="info-value">${fund['52w_low']}</div></div>
+        `;
+
+        // 填入專屬新聞
+        const newsUl = document.getElementById('modal-news');
+        newsUl.innerHTML = '';
+        if (data.news && data.news.length > 0) {
+            data.news.forEach(n => {
+                newsUl.innerHTML += `<li><a href="${n.link}" target="_blank" class="news-link">${n.title}</a></li>`;
+            });
+        } else {
+            newsUl.innerHTML = '<li style="color:var(--text-secondary)">暫無相關新聞</li>';
+        }
+        
+    } catch (error) {
+        document.getElementById('modal-fundamentals').innerHTML = '<div style="color:var(--down-color)">資料獲取失敗</div>';
+    }
+}
+
+function closeModal(event) {
+    if (event.target.id === 'stock-modal' || event.target.className === 'close-btn') {
+        document.getElementById('stock-modal').style.display = 'none';
+    }
+}
+
+// 綁定「套用並掃描」按鈕事件
 document.getElementById('btn-search').addEventListener('click', () => {
     updateStockList();
 });
+
+// 啟動所有函式
+updateMacroData();
+updateStockList();
+updateNews();

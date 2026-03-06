@@ -6,7 +6,6 @@
     <title>量化監控中心 | Moji Ai Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 蘋果風格全域設定 */
         :root { --bg-color: #000000; --card-bg: rgba(28, 28, 30, 0.7); --text-primary: #F5F5F7; --text-secondary: #86868B; --up-color: #34C759; --down-color: #FF3B30; }
         body { background-color: var(--bg-color); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; flex-direction: column; align-items: center; padding-top: 40px; padding-bottom: 60px; min-height: 100vh; margin: 0; box-sizing: border-box;}
         
@@ -31,6 +30,22 @@
         .highlight-buy { color: var(--up-color); font-weight: 600;}
         .news-link { color: #64D2FF; text-decoration: none; transition: 0.2s; }
         .news-link:hover { color: #0A84FF; text-decoration: underline; }
+
+        /* 💡 新增：表格懸停特效與彈窗樣式 */
+        .clickable-row { cursor: pointer; transition: background 0.2s ease; }
+        .clickable-row:hover { background: rgba(255, 255, 255, 0.08); }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-content { width: 90%; max-width: 600px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .close-btn { position: absolute; top: 20px; right: 24px; font-size: 28px; cursor: pointer; color: var(--text-secondary); transition: 0.2s;}
+        .close-btn:hover { color: white; }
+        
+        .modal-section { margin-top: 24px; }
+        .modal-section h3 { font-size: 18px; color: var(--text-primary); margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;}
+        .fundamentals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .info-box { background: rgba(255,255,255,0.05); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);}
+        .info-label { color: var(--text-secondary); font-size: 13px; margin-bottom: 6px; }
+        .info-value { color: white; font-size: 20px; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -93,7 +108,7 @@
         </div>
 
         <div class="base-card">
-            <div class="card-title" style="color:var(--text-primary); font-size:20px; text-transform: none;">本日動能清單 (依參數篩選)</div>
+            <div class="card-title" style="color:var(--text-primary); font-size:20px; text-transform: none;">本日動能清單 (依參數篩選，點擊可看基本面)</div>
             <table>
                 <thead><tr><th>代號</th><th>名稱</th><th>三大法人買超 (張)</th><th>市值 (億)</th></tr></thead>
                 <tbody id="stock-list-body"><tr><td colspan="4" style="text-align: center; color: var(--text-secondary);">系統運算中...</td></tr></tbody>
@@ -112,6 +127,25 @@
             </ul>
         </div>
 
+    </div>
+
+    <div id="stock-modal" class="modal-overlay" onclick="closeModal(event)">
+        <div class="modal-content base-card" onclick="event.stopPropagation()">
+            <span class="close-btn" onclick="closeModal(event)">&times;</span>
+            <div id="modal-title" style="font-size: 24px; font-weight: 700; color: white;">載入中...</div>
+            
+            <div class="modal-section">
+                <h3>📊 籌碼與基本面健檢</h3>
+                <div id="modal-fundamentals" class="fundamentals-grid">
+                    </div>
+            </div>
+            
+            <div class="modal-section">
+                <h3>📰 專屬標的新聞</h3>
+                <ul id="modal-news" style="padding-left: 20px; line-height: 1.8; margin: 0; font-size: 15px; color:var(--text-primary);">
+                    </ul>
+            </div>
+        </div>
     </div>
 
     <script src="js/app.js"></script>
